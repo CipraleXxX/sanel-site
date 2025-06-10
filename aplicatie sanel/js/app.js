@@ -974,7 +974,7 @@ async function calculateRoute(waypoints, selectedVehicles) {
                     totalDistance += route.legs[i].distance.value / 1000; // Convert to km
                     totalDuration += route.legs[i].duration.value;
                 }
-                
+
                 // Calculate cost for each vehicle
                 let totalCost = 0;
                 selectedVehicles.forEach(vehicle => {
@@ -985,7 +985,12 @@ async function calculateRoute(waypoints, selectedVehicles) {
                 const hours = Math.floor(totalDuration / 3600);
                 const minutes = Math.floor((totalDuration % 3600) / 60);
                 const formattedDuration = `${hours}h ${minutes}m`;
-                
+
+                // Display route on the map
+                if (directionsRenderer) {
+                    directionsRenderer.setDirections(result);
+                }
+
                 resolve({
                     totalDistance: totalDistance,
                     totalDuration: formattedDuration,
@@ -1171,6 +1176,7 @@ async function calculateRouteAndShowResults() {
                     </button>
                 </div>
             `;
+            resultDiv.classList.remove('hidden');
         }
         
         // Store the current calculation data for the addEvent function
