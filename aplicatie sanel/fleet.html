@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .category-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .category-card:hover {
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .vehicle-list {
+            max-height: 250px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+        .vehicle-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .vehicle-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .vehicle-list::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .add-category-card {
+            border: 2px dashed #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            height: 100%;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .add-category-card:hover {
+            border-color: #2563eb;
+            color: #2563eb;
+            background-color: #f8fafc;
+        }
+        @media (max-width: 768px) {
+            .nav-text {
+                display: none;
+            }
+            .nav-icon {
+                margin-right: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen">
+        <nav class="bg-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+                <div class="relative flex items-center justify-between h-16">
+                    <!-- Mobile menu button-->
+                    <div class="absolute inset-y-0 left-0 flex items-center sm:hidden">
+                        <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                            <span class="sr-only">Open main menu</span>
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Desktop Navigation -->
+                    <div class="hidden sm:flex flex-1 items-center justify-center sm:items-stretch">
+                        <div class="flex space-x-4">
+                            <a href="index.html" class="nav-link group flex items-center px-3 py-2 text-base font-medium rounded-md hover:bg-blue-50 transition-colors duration-150">
+                                <i class="fas fa-route nav-icon mr-3 text-blue-600"></i>
+                                <span class="nav-text">Route Planning</span>
+                            </a>
+                            <a href="fleet.html" class="nav-link group flex items-center px-3 py-2 text-base font-medium rounded-md bg-blue-50 text-blue-600">
+                                <i class="fas fa-truck nav-icon mr-3 text-blue-600"></i>
+                                <span class="nav-text">Fleet Management</span>
+                            </a>
+                            <a href="events.html" class="nav-link group flex items-center px-3 py-2 text-base font-medium rounded-md hover:bg-blue-50 transition-colors duration-150">
+                                <i class="fas fa-calendar-alt nav-icon mr-3 text-blue-600"></i>
+                                <span class="nav-text">Events</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile menu, show/hide based on menu state -->
+            <div class="sm:hidden hidden" id="mobile-menu">
+                <div class="px-2 pt-2 pb-3 space-y-1">
+                    <a href="index.html" class="nav-link flex items-center px-3 py-2 rounded-md text-base font-medium hover:bg-blue-50 transition-colors duration-150">
+                        <i class="fas fa-route mr-3 text-blue-600"></i>
+                        Route Planning
+                    </a>
+                    <a href="fleet.html" class="nav-link flex items-center px-3 py-2 rounded-md text-base font-medium bg-blue-50 text-blue-600">
+                        <i class="fas fa-truck mr-3"></i>
+                        Fleet Management
+                    </a>
+                    <a href="events.html" class="nav-link flex items-center px-3 py-2 rounded-md text-base font-medium hover:bg-blue-50 transition-colors duration-150">
+                        <i class="fas fa-calendar-alt mr-3 text-blue-600"></i>
+                        Events
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mx-auto px-4 py-8">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-bold">Fleet Management</h1>
+                    <button id="refreshFleet" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-150 flex items-center justify-center">
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <div class="text-blue-600 text-sm font-medium">Total Categories</div>
+                        <div class="text-2xl font-bold" id="totalCategories">0</div>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <div class="text-green-600 text-sm font-medium">Total Vehicles</div>
+                        <div class="text-2xl font-bold" id="totalVehicles">0</div>
+                    </div>
+                </div>
+
+                <!-- Categories Grid -->
+                <div id="categoriesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Categories will be added here dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Category Modal -->
+    <div id="categoryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold" id="modalTitle">Add New Category</h2>
+                <button onclick="hideCategoryModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="categoryForm" onsubmit="handleCategorySubmit(event)">
+                <input type="hidden" id="editCategoryId">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="categoryName">
+                        Category Name
+                    </label>
+                    <input type="text" id="categoryName" 
+                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                           placeholder="e.g., 3.5t, 7t, etc." required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="categoryPrice">
+                        Price per km (RON)
+                    </label>
+                    <input type="number" id="categoryPrice" 
+                           class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                           step="0.01" min="0" required>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="hideCategoryModal()"
+                            class="px-4 py-2 border rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        Save Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script>
+        // Initialize fleet data structure
+        let fleet = {};
+
+        // Load fleet data from localStorage on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedFleet = localStorage.getItem('fleet');
+            if (savedFleet) {
+                fleet = JSON.parse(savedFleet);
+            } else {
+                // Initialize with default categories
+                fleet = {
+                    '3.5t': { price: 2.18, vehicles: [] },
+                    '7t': { price: 2.90, vehicles: [] },
+                    '12t': { price: 4.03, vehicles: [] },
+                    '24t': { price: 4.79, vehicles: [] }
+                };
+                saveFleet();
+            }
+            updateUI();
+        });
+
+        // Update the entire UI
+        function updateUI() {
+            updateStats();
+            renderCategories();
+        }
+
+        // Update statistics
+        function updateStats() {
+            const categories = Object.keys(fleet);
+            const totalCategories = categories.length;
+            const totalVehicles = categories.reduce((sum, cat) => sum + fleet[cat].vehicles.length, 0);
+
+            document.getElementById('totalCategories').textContent = totalCategories;
+            document.getElementById('totalVehicles').textContent = totalVehicles;
+        }
+
+        // Render all categories
+        function renderCategories() {
+            const grid = document.getElementById('categoriesGrid');
+            grid.innerHTML = '';
+
+            // Add existing categories
+            Object.entries(fleet).forEach(([category, data]) => {
+                const card = document.createElement('div');
+                card.className = 'category-card p-4';
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">${category}</h3>
+                        <div class="flex gap-2">
+                            <button onclick="editCategory('${category}')" 
+                                    class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteCategory('${category}')" 
+                                    class="text-red-600 hover:text-red-800">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mb-4 bg-gray-50 p-2 rounded">
+                        <span class="text-gray-600">Price per km:</span>
+                        <span class="font-semibold">${data.price} RON</span>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="font-medium">Vehicles (${data.vehicles.length})</h4>
+                            <div class="tooltip">
+                                <button onclick="showAddVehiclePrompt('${category}')"
+                                        class="text-sm text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-plus"></i> Add
+                                </button>
+                                <span class="tooltiptext">Add a new vehicle to this category</span>
+                            </div>
+                        </div>
+                        <div class="vehicle-list">
+                            ${data.vehicles.map(plate => `
+                                <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
+                                    <span>${plate}</span>
+                                    <button onclick="removeVehicle('${category}', '${plate}')"
+                                            class="text-red-600 hover:text-red-800">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            `).join('') || '<div class="text-gray-500 text-center p-2">No vehicles added</div>'}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // Add the "Add Category" card
+            const addCard = document.createElement('div');
+            addCard.className = 'add-category-card';
+            addCard.onclick = () => showAddCategoryModal();
+            addCard.innerHTML = `
+                <i class="fas fa-plus text-3xl mb-2"></i>
+                <div class="text-lg font-medium">Add New Category</div>
+                <div class="text-sm">Click to add a new vehicle category</div>
+            `;
+            grid.appendChild(addCard);
+        }
+
+        // Show add/edit category modal
+        function showAddCategoryModal(category = null) {
+            const modal = document.getElementById('categoryModal');
+            const titleEl = document.getElementById('modalTitle');
+            const nameInput = document.getElementById('categoryName');
+            const priceInput = document.getElementById('categoryPrice');
+            const idInput = document.getElementById('editCategoryId');
+
+            if (category) {
+                titleEl.textContent = 'Edit Category';
+                nameInput.value = category;
+                priceInput.value = fleet[category].price;
+                idInput.value = category;
+                nameInput.readOnly = true;
+            } else {
+                titleEl.textContent = 'Add New Category';
+                nameInput.value = '';
+                priceInput.value = '';
+                idInput.value = '';
+                nameInput.readOnly = false;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        // Hide category modal
+        function hideCategoryModal() {
+            document.getElementById('categoryModal').classList.add('hidden');
+        }
+
+        // Handle category form submission
+        function handleCategorySubmit(event) {
+            event.preventDefault();
+            const name = document.getElementById('categoryName').value.trim();
+            const price = parseFloat(document.getElementById('categoryPrice').value);
+            const editId = document.getElementById('editCategoryId').value;
+
+            if (editId) {
+                // Editing existing category
+                fleet[editId].price = price;
+            } else {
+                // Adding new category
+                if (fleet[name]) {
+                    alert('This category already exists');
+                    return;
+                }
+                fleet[name] = { price: price, vehicles: [] };
+            }
+
+            saveFleet();
+            updateUI();
+            hideCategoryModal();
+        }
+
+        // Delete category
+        function deleteCategory(category) {
+            if (fleet[category].vehicles.length > 0) {
+                if (!confirm(`This category has ${fleet[category].vehicles.length} vehicles. Are you sure you want to delete it?`)) {
+                    return;
+                }
+            }
+            delete fleet[category];
+            saveFleet();
+            updateUI();
+        }
+
+        // Edit category
+        function editCategory(category) {
+            showAddCategoryModal(category);
+        }
+
+        // Show add vehicle prompt
+        function showAddVehiclePrompt(category) {
+            const plate = prompt('Enter vehicle plate number:');
+            if (plate) {
+                addVehicle(category, plate.trim().toUpperCase());
+            }
+        }
+
+        // Add vehicle
+        function addVehicle(category, plate) {
+            if (!plate) {
+                alert('Please enter a plate number');
+                return;
+            }
+
+            // Check if plate already exists in any category
+            for (const cat in fleet) {
+                if (fleet[cat].vehicles.includes(plate)) {
+                    alert('This plate number already exists in the fleet');
+                    return;
+                }
+            }
+
+            fleet[category].vehicles.push(plate);
+            saveFleet();
+            updateUI();
+        }
+
+        // Remove vehicle
+        function removeVehicle(category, plate) {
+            if (confirm('Are you sure you want to remove this vehicle?')) {
+                fleet[category].vehicles = fleet[category].vehicles.filter(v => v !== plate);
+                saveFleet();
+                updateUI();
+            }
+        }
+
+        // Save fleet data to localStorage
+        function saveFleet() {
+            localStorage.setItem('fleet', JSON.stringify(fleet));
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            mobileMenuButton.addEventListener('click', () => {
+                const isMenuHidden = mobileMenu.classList.contains('hidden');
+                if (isMenuHidden) {
+                    mobileMenu.classList.remove('hidden');
+                    mobileMenuButton.innerHTML = '<i class="fas fa-times"></i>';
+                } else {
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuButton.innerHTML = '<i class="fas fa-bars"></i>';
+                }
+            });
+
+            loadCategories();
+            // ... rest of the existing code ...
+        });
+    </script>
+</body>
+</html> 

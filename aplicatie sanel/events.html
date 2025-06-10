@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transport Events Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="js/exportUtils.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        @media (max-width: 768px) {
+            .nav-text {
+                display: none;
+            }
+            .nav-icon {
+                margin-right: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen">
+        <nav class="bg-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+                <div class="relative flex items-center justify-between h-16">
+                    <!-- Mobile menu button-->
+                    <div class="absolute inset-y-0 left-0 flex items-center sm:hidden">
+                        <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                            <span class="sr-only">Open main menu</span>
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Desktop Navigation -->
+                    <div class="hidden sm:flex flex-1 items-center justify-center sm:items-stretch">
+                        <div class="flex space-x-4">
+                            <a href="index.html" class="nav-link group flex items-center px-3 py-2 text-base font-medium rounded-md hover:bg-blue-50 transition-colors duration-150">
+                                <i class="fas fa-route nav-icon mr-3 text-blue-600"></i>
+                                <span class="nav-text">Route Planning</span>
+                            </a>
+                            <a href="fleet.html" class="nav-link group flex items-center px-3 py-2 text-base font-medium rounded-md hover:bg-blue-50 transition-colors duration-150">
+                                <i class="fas fa-truck nav-icon mr-3 text-blue-600"></i>
+                                <span class="nav-text">Fleet Management</span>
+                            </a>
+                            <a href="events.html" class="nav-link group flex items-center px-3 py-2 text-base font-medium rounded-md bg-blue-50 text-blue-600">
+                                <i class="fas fa-calendar-alt nav-icon mr-3 text-blue-600"></i>
+                                <span class="nav-text">Events</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile menu, show/hide based on menu state -->
+            <div class="sm:hidden hidden" id="mobile-menu">
+                <div class="px-2 pt-2 pb-3 space-y-1">
+                    <a href="index.html" class="nav-link flex items-center px-3 py-2 rounded-md text-base font-medium hover:bg-blue-50 transition-colors duration-150">
+                        <i class="fas fa-route mr-3 text-blue-600"></i>
+                        Route Planning
+                    </a>
+                    <a href="fleet.html" class="nav-link flex items-center px-3 py-2 rounded-md text-base font-medium hover:bg-blue-50 transition-colors duration-150">
+                        <i class="fas fa-truck mr-3 text-blue-600"></i>
+                        Fleet Management
+                    </a>
+                    <a href="events.html" class="nav-link flex items-center px-3 py-2 rounded-md text-base font-medium bg-blue-50 text-blue-600">
+                        <i class="fas fa-calendar-alt mr-3"></i>
+                        Events
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mx-auto px-4 py-8">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                    <h1 class="text-2xl font-bold">Transport Events</h1>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button id="refreshEvents" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-150 flex items-center justify-center">
+                            <i class="fas fa-sync-alt mr-2"></i>
+                            <span>Refresh</span>
+                        </button>
+                        <button id="exportSelected" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                            <i class="fas fa-file-excel mr-2"></i>
+                            <span>Export Detailed</span>
+                        </button>
+                        <button onclick="exportToExcelSimplified(getSelectedEvents())" id="exportSimplifiedBtn" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" 
+                                disabled>
+                            <i class="fas fa-file-excel mr-2"></i>Export Simplified
+                        </button>
+                        <button onclick="exportHelpersToExcel(getSelectedEvents())" id="exportHelpersBtn" 
+                                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" 
+                                disabled>
+                            <i class="fas fa-users mr-2"></i>Export Workforce
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search and Filters Section -->
+                <div class="mb-6 space-y-4">
+                    <!-- Search Bar -->
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="flex-1">
+                            <div class="relative">
+                                <input type="text" id="searchInput" placeholder="Search events..." 
+                                       class="w-full pl-10 pr-4 py-2 border rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="toggleFilters" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors duration-150 flex items-center">
+                                <i class="fas fa-filter mr-2"></i>
+                                <span>Filters</span>
+                            </button>
+                            <button id="toggleSort" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors duration-150 flex items-center">
+                                <i class="fas fa-sort mr-2"></i>
+                                <span>Sort</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filters Panel (Hidden by default) -->
+                    <div id="filtersPanel" class="hidden bg-gray-50 p-4 rounded-lg">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                                <div class="flex gap-2">
+                                    <input type="date" id="dateFrom" class="flex-1 p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                    <input type="date" id="dateTo" class="flex-1 p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Vehicle</label>
+                                <select id="vehicleFilter" class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                    <option value="">All Vehicles</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
+                                <div class="flex gap-2">
+                                    <input type="number" id="priceFrom" placeholder="Min" class="flex-1 p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                    <input type="number" id="priceTo" placeholder="Max" class="flex-1 p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end mt-4 gap-2">
+                            <button id="clearFilters" class="text-gray-600 hover:text-gray-800">
+                                Clear Filters
+                            </button>
+                            <button id="applyFilters" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                                Apply Filters
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sort Panel (Hidden by default) -->
+                    <div id="sortPanel" class="hidden bg-gray-50 p-4 rounded-lg">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                                <select id="sortField" class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                    <option value="date">Date</option>
+                                    <option value="name">Event Name</option>
+                                    <option value="distance">Distance</option>
+                                    <option value="totalWithVAT">Total Cost</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Order</label>
+                                <select id="sortOrder" class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                    <option value="desc">Descending</option>
+                                    <option value="asc">Ascending</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex justify-end mt-4">
+                            <button id="applySort" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                                Apply Sort
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Active Filters Display -->
+                    <div id="activeFilters" class="flex flex-wrap gap-2">
+                        <!-- Active filters will be added here -->
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="p-3 text-left">
+                                    <input type="checkbox" id="selectAll" class="touch-checkbox">
+                                </th>
+                                <th class="p-3 text-left">Date</th>
+                                <th class="p-3 text-left">Event</th>
+                                <th class="p-3 text-left">Route</th>
+                                <th class="p-3 text-right">Distance (km)</th>
+                                <th class="p-3 text-right">Vehicles</th>
+                                <th class="p-3 text-right">Total without VAT</th>
+                                <th class="p-3 text-right">VAT</th>
+                                <th class="p-3 text-right">Total with VAT</th>
+                                <th class="p-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eventsTableBody">
+                            <!-- Events will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Details Modal -->
+    <div id="eventDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-96 overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-medium text-gray-900" id="modalEventName">Event Details</h3>
+                    <button onclick="closeEventDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="px-6 py-4" id="eventDetailsContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <button onclick="exportEventToExcel()" id="exportSingleEventBtn" 
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="fas fa-file-excel mr-2"></i>Export This Event
+                </button>
+                <button onclick="closeEventDetailsModal()" 
+                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script>
+        let allEvents = [];
+        let filteredEvents = [];
+        let currentModalEvent = null;
+
+        // Format currency
+        function formatCurrency(amount) {
+            return parseFloat(amount).toFixed(2);
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ro-RO', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // Event Data Structure and Validation
+        const EventManager = {
+            // Constants
+            VAT_RATE: 0.19,
+            DECIMAL_PLACES: 2,
+
+            // Data validation
+            validateEvent: (event) => {
+                if (!event) return false;
+                
+                // Validate basic properties
+                if (!event.name || !event.date || !event.route) {
+                    console.error('Missing required event properties:', event);
+                    return false;
+                }
+
+                // Validate distance
+                const distance = parseFloat(event.distance);
+                if (isNaN(distance) || distance <= 0) {
+                    console.error('Invalid distance:', event.distance);
+                    return false;
+                }
+
+                // Validate vehicles
+                if (!Array.isArray(event.vehicles) || event.vehicles.length === 0) {
+                    console.error('No vehicles found for event:', event.name);
+                    return false;
+                }
+
+                // Validate each vehicle
+                for (const vehicle of event.vehicles) {
+                    const pricePerKm = parseFloat(vehicle.pricePerKm);
+                    if (isNaN(pricePerKm) || pricePerKm < 0) {
+                        console.error('Invalid vehicle price:', vehicle);
+                        return false;
+                    }
+                }
+
+                return true;
+            },
+
+            // Calculate event costs
+            calculateEventCosts: (event) => {
+                if (!EventManager.validateEvent(event)) {
+                    return null;
+                }
+
+                const distance = parseFloat(event.distance);
+                let totalWithoutVAT = 0;
+
+                // Calculate cost for each vehicle
+                for (const vehicle of event.vehicles) {
+                    const pricePerKm = parseFloat(vehicle.pricePerKm);
+                    const vehicleCost = pricePerKm * distance;
+                    totalWithoutVAT += vehicleCost;
+                }
+
+                // Round to 2 decimal places
+                totalWithoutVAT = Math.round((totalWithoutVAT + Number.EPSILON) * 100) / 100;
+                const vatAmount = Math.round((totalWithoutVAT * EventManager.VAT_RATE + Number.EPSILON) * 100) / 100;
+                const totalWithVAT = Math.round((totalWithoutVAT + vatAmount + Number.EPSILON) * 100) / 100;
+
+                return {
+                    distance,
+                    totalWithoutVAT,
+                    vatAmount,
+                    totalWithVAT,
+                    numberOfVehicles: event.vehicles.length
+                };
+            },
+
+            // Calculate totals for multiple events
+            calculateEventsTotal: (events) => {
+                if (!Array.isArray(events)) return null;
+
+                let totals = {
+                    totalWithoutVAT: 0,
+                    vatAmount: 0,
+                    totalWithVAT: 0,
+                    totalDistance: 0,
+                    totalVehicles: 0
+                };
+
+                for (const event of events) {
+                    const costs = EventManager.calculateEventCosts(event);
+                    if (costs) {
+                        totals.totalWithoutVAT += costs.totalWithoutVAT;
+                        totals.vatAmount += costs.vatAmount;
+                        totals.totalWithVAT += costs.totalWithVAT;
+                        totals.totalDistance += costs.distance;
+                        totals.totalVehicles += costs.numberOfVehicles;
+                    }
+                }
+
+                // Round all totals
+                totals.totalWithoutVAT = Math.round((totals.totalWithoutVAT + Number.EPSILON) * 100) / 100;
+                totals.vatAmount = Math.round((totals.vatAmount + Number.EPSILON) * 100) / 100;
+                totals.totalWithVAT = Math.round((totals.totalWithVAT + Number.EPSILON) * 100) / 100;
+                totals.totalDistance = Math.round((totals.totalDistance + Number.EPSILON) * 100) / 100;
+
+                return totals;
+            }
+        };
+
+        // Load and display events
+        function loadEvents() {
+            console.log('Loading events...');
+            const events = JSON.parse(localStorage.getItem('events') || '[]');
+            console.log('Found events:', events);
+            
+            allEvents = events; // Store globally for other functions
+            
+            const tbody = document.getElementById('eventsTableBody');
+            if (tbody) {
+                tbody.innerHTML = '';
+
+                if (events.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="10" class="p-4 text-center text-gray-500">
+                                No events found. Create a route in the Route Planner to add events.
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                // Generate numeric IDs for events that don't have them
+                let needsUpdate = false;
+                let maxId = 0;
+                events.forEach(event => {
+                    if (event.eventId && typeof event.eventId === 'number') {
+                        maxId = Math.max(maxId, event.eventId);
+                    }
+                });
+                
+                events.forEach(event => {
+                    if (!event.eventId) {
+                        maxId++;
+                        event.eventId = maxId;
+                        needsUpdate = true;
+                    }
+                });
+                
+                if (needsUpdate) {
+                    localStorage.setItem('events', JSON.stringify(events));
+                }
+
+                events.sort((a, b) => (b.eventId || 0) - (a.eventId || 0)).forEach((event, index) => {
+                    
+                    const row = document.createElement('tr');
+                    row.className = index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100';
+                    row.innerHTML = `
+                        <td class="p-3">
+                            <input type="checkbox" class="event-checkbox touch-checkbox" data-event-id="${event.eventId}">
+                        </td>
+                        <td class="p-3">${event.eventId || 'N/A'}</td>
+                        <td class="p-3">${event.name || 'Unknown'}</td>
+                        <td class="p-3">${formatCurrency(event.distance || 0)}</td>
+                        <td class="p-3 text-right">${event.vehicles?.length || 0}</td>
+                        <td class="p-3 text-right">${formatCurrency(event.costWithoutVAT || 0)} RON</td>
+                        <td class="p-3 text-right">${formatCurrency(event.vatAmount || 0)} RON</td>
+                        <td class="p-3 text-right">${formatCurrency(event.costWithVAT || 0)} RON</td>
+                        <td class="p-3 text-center">
+                            <button class="touch-delete-btn" onclick="deleteEventById('${event.eventId}')" title="Șterge evenimentul">
+                                &#10006;
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            updateExportButtonsState();
+        }
+
+        // Get selected events for export
+        function getSelectedEvents() {
+            const selectedCheckboxes = document.querySelectorAll('.event-checkbox:checked');
+            return Array.from(selectedCheckboxes)
+                .map(checkbox => {
+                    const eventId = parseInt(checkbox.getAttribute('data-event-id'));
+                    return allEvents.find(event => event.eventId === eventId);
+                })
+                .filter(event => event);
+        }
+
+        // Populate vehicle filter dropdown
+        function populateVehicleFilter() {
+            const events = JSON.parse(localStorage.getItem('events') || '[]');
+            const vehicles = new Set();
+            
+            events.forEach(event => {
+                if (event.vehicles) {
+                    event.vehicles.forEach(vehicle => {
+                        vehicles.add(`${vehicle.type} (${vehicle.category || 'Unknown'})`);
+                    });
+                }
+            });
+
+            const vehicleFilter = document.getElementById('vehicleFilter');
+            if (vehicleFilter) {
+                vehicles.forEach(vehicle => {
+                    const option = document.createElement('option');
+                    option.value = vehicle;
+                    option.textContent = vehicle;
+                    vehicleFilter.appendChild(option);
+                });
+            }
+        }
+
+        // Apply filters and search
+        function applyFiltersAndSearch() {
+            const events = JSON.parse(localStorage.getItem('events') || '[]');
+            let filteredEvents = [...events];
+
+            // Search filter
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (searchTerm) {
+                filteredEvents = filteredEvents.filter(event => 
+                    (event.name && event.name.toLowerCase().includes(searchTerm)) ||
+                    (event.waypoints && event.waypoints.some(point => point.toLowerCase().includes(searchTerm)))
+                );
+            }
+
+            // Date filters
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            if (dateFrom) {
+                filteredEvents = filteredEvents.filter(event => 
+                    new Date(event.createdAt) >= new Date(dateFrom)
+                );
+            }
+            if (dateTo) {
+                filteredEvents = filteredEvents.filter(event => 
+                    new Date(event.createdAt) <= new Date(dateTo)
+                );
+            }
+
+            updateEventsDisplay(filteredEvents);
+        }
+
+        // Delete event by ID
+        function deleteEventById(eventId) {
+            if (confirm('Are you sure you want to delete this event?')) {
+                const events = JSON.parse(localStorage.getItem('events') || '[]');
+                const updatedEvents = events.filter(event => event.eventId != eventId);
+                localStorage.setItem('events', JSON.stringify(updatedEvents));
+                loadEvents();
+            }
+        }
+
+        // Update display function
+        function displayEvents(events) {
+            const tbody = document.getElementById('eventsTableBody');
+            tbody.innerHTML = '';
+
+            if (!Array.isArray(events) || events.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="p-4 text-center text-gray-500">
+                            No events found matching your criteria.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            events.forEach((event, index) => {
+                const costs = EventManager.calculateEventCosts(event);
+                if (!costs) {
+                    console.warn(`Skipping invalid event at index ${index}`);
+                    return;
+                }
+
+                // Generate numeric eventId if missing (this shouldn't happen if loadEvents fixed them)
+                if (!event.eventId) {
+                    event.eventId = Date.now() + index; // fallback
+                }
+
+                const row = document.createElement('tr');
+                row.className = index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100';
+                row.innerHTML = `
+                    <td class="p-3">
+                        <input type="checkbox" class="event-checkbox touch-checkbox" data-event-id="${event.eventId}">
+                    </td>
+                    <td class="p-3">${formatDate(event.date)}</td>
+                    <td class="p-3">${event.name}</td>
+                    <td class="p-3">${event.route}</td>
+                    <td class="p-3 text-right">${formatCurrency(costs.distance)}</td>
+                    <td class="p-3 text-right">${costs.numberOfVehicles}</td>
+                    <td class="p-3 text-right">${formatCurrency(costs.totalWithoutVAT)} RON</td>
+                    <td class="p-3 text-right">${formatCurrency(costs.vatAmount)} RON</td>
+                    <td class="p-3 text-right">${formatCurrency(costs.totalWithVAT)} RON</td>
+                    <td class="p-3 text-center">
+                        <button class="touch-delete-btn" onclick="deleteEventById('${event.eventId}')" title="Șterge evenimentul">
+                            &#10006;
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            updateExportButtonsState();
+        }
+
+        // Export simplified format to Excel
+        function exportSimplifiedToExcel() {
+            try {
+                const selectedEvents = getSelectedEvents();
+                
+                if (selectedEvents.length === 0) {
+                    alert('Vă rugăm să selectați cel puțin un eveniment pentru export');
+                    return;
+                }
+
+                // Call the function from exportUtils.js
+                exportToExcelSimplified(selectedEvents);
+
+            } catch (error) {
+                console.error('Error in exportSimplifiedToExcel:', error);
+                alert('A apărut o eroare la exportul datelor. Vă rugăm să încercați din nou.');
+            }
+        }
+
+        // Export detailed format to Excel
+        function exportDetailedToExcel() {
+            try {
+                const selectedEvents = getSelectedEvents();
+                
+                if (selectedEvents.length === 0) {
+                    alert('Vă rugăm să selectați cel puțin un eveniment pentru export');
+                    return;
+                }
+
+                // Call the function from exportUtils.js
+                exportToExcelDetailed(selectedEvents);
+
+            } catch (error) {
+                console.error('Error in exportDetailedToExcel:', error);
+                alert('A apărut o eroare la exportul datelor. Vă rugăm să încercați din nou.');
+            }
+        }
+
+        // Initialize page with safe event handlers
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                // Mobile menu toggle
+                const mobileMenuButton = document.getElementById('mobile-menu-button');
+                const mobileMenu = document.getElementById('mobile-menu');
+                
+                if (mobileMenuButton && mobileMenu) {
+                    mobileMenuButton.addEventListener('click', () => {
+                        const isMenuHidden = mobileMenu.classList.contains('hidden');
+                        if (isMenuHidden) {
+                            mobileMenu.classList.remove('hidden');
+                            mobileMenuButton.innerHTML = '<i class="fas fa-times"></i>';
+                        } else {
+                            mobileMenu.classList.add('hidden');
+                            mobileMenuButton.innerHTML = '<i class="fas fa-bars"></i>';
+                        }
+                    });
+                }
+
+                // Load initial data
+                loadEvents();
+                populateVehicleFilter();
+
+                // Search functionality with safe event handler
+                let searchTimeout;
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.addEventListener('input', (e) => {
+                        clearTimeout(searchTimeout);
+                        searchTimeout = setTimeout(() => {
+                            applyFiltersAndSearch();
+                        }, 300);
+                    });
+                }
+
+                // Handle refresh button
+                const refreshBtn = document.getElementById('refreshEvents');
+                if (refreshBtn) {
+                    refreshBtn.addEventListener('click', () => {
+                        window.location.reload();
+                    });
+                }
+
+                // Handle select all checkbox
+                const selectAllBtn = document.getElementById('selectAll');
+                if (selectAllBtn) {
+                    selectAllBtn.addEventListener('change', function() {
+                        document.querySelectorAll('.event-checkbox').forEach(checkbox => {
+                            checkbox.checked = this.checked;
+                        });
+                        updateExportButtonsState();
+                    });
+                }
+
+                // Handle export buttons with safe references
+                const exportDetailedBtn = document.getElementById('exportDetailedBtn');
+                const exportSimplifiedBtn = document.getElementById('exportSimplifiedBtn');
+                const exportHelpersBtn = document.getElementById('exportHelpersBtn');
+
+                if (exportDetailedBtn) {
+                    exportDetailedBtn.addEventListener('click', exportDetailedToExcel);
+                }
+                if (exportSimplifiedBtn) {
+                    exportSimplifiedBtn.addEventListener('click', exportSimplifiedToExcel);
+                }
+                if (exportHelpersBtn && typeof exportHelpersToExcel === 'function') {
+                    exportHelpersBtn.addEventListener('click', () => {
+                        const selectedEvents = getSelectedEvents();
+                        if (selectedEvents.length === 0) {
+                            alert('Vă rugăm să selectați cel puțin un eveniment pentru export');
+                            return;
+                        }
+                        exportHelpersToExcel(selectedEvents);
+                    });
+                }
+
+                // Handle individual checkboxes with event delegation
+                document.addEventListener('change', function(e) {
+                    if (e.target && e.target.classList && e.target.classList.contains('event-checkbox')) {
+                        updateExportButtonsState();
+                    }
+                });
+
+                // Initial button state
+                updateExportButtonsState();
+
+            } catch (error) {
+                console.error('Error in DOMContentLoaded:', error);
+            }
+        });
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            document.getElementById('vehicleFilter').value = '';
+            document.getElementById('priceFrom').value = '';
+            document.getElementById('priceTo').value = '';
+            document.getElementById('searchInput').value = '';
+            applyFiltersAndSearch();
+        }
+
+        // Update export button state
+        function updateExportButtonsState() {
+            const checkedCount = document.querySelectorAll('.event-checkbox:checked').length;
+            const exportDetailedButton = document.getElementById('exportDetailedBtn');
+            const exportSimplifiedButton = document.getElementById('exportSimplifiedBtn');
+            const exportHelpersButton = document.getElementById('exportHelpersBtn');
+            
+            if (exportDetailedButton) exportDetailedButton.disabled = checkedCount === 0;
+            if (exportSimplifiedButton) exportSimplifiedButton.disabled = checkedCount === 0;
+            if (exportHelpersButton) exportHelpersButton.disabled = checkedCount === 0;
+        }
+
+        // Update events display with enhanced details
+        function updateEventsDisplay(events = allEvents) {
+            const eventsList = document.getElementById('eventsList');
+            
+            if (events.length === 0) {
+                eventsList.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500">No events found</p>
+                    </div>
+                `;
+                return;
+            }
+
+            eventsList.innerHTML = events.map(event => {
+                const localRunsText = event.localRuns > 0 ? `${event.localRuns} Local Run${event.localRuns > 1 ? 's' : ''}` : '';
+                const travelAllowance = event.workforce?.travelAllowance || {};
+                const hasExternalTravel = travelAllowance.isExternalTravel || false;
+                
+                return `
+                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer" 
+                         onclick="showEventDetails(${event.eventId})">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-800">${event.name}</h3>
+                                <p class="text-sm text-gray-600">${formatCurrency(event.distance)} km • ${event.duration || 'Duration not available'}</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-lg font-bold text-blue-600">${formatCurrency(event.costWithVAT)} RON</div>
+                                <div class="text-sm text-gray-500">including VAT</div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Vehicles</span>
+                                <p class="text-sm text-gray-800">${event.vehicles?.length || 0} vehicle${event.vehicles?.length !== 1 ? 's' : ''}</p>
+                                ${localRunsText ? `<p class="text-xs text-green-600"><i class="fas fa-map-signs mr-1"></i>${localRunsText}</p>` : ''}
+                            </div>
+                            <div>
+                                <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Workforce</span>
+                                <p class="text-sm text-gray-800">${event.workforce?.numberOfWorkers || 0} worker${event.workforce?.numberOfWorkers !== 1 ? 's' : ''}</p>
+                                ${event.workforce?.helpers ? `<p class="text-xs text-gray-600">${event.workforce.helpers} helpers + ${event.workforce.teamLeaders} leader${event.workforce.teamLeaders > 1 ? 's' : ''}</p>` : ''}
+                            </div>
+                            <div>
+                                <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Special Features</span>
+                                <div class="text-sm space-y-1">
+                                    ${event.workforce?.hasAccommodation ? `<p class="text-xs text-purple-600"><i class="fas fa-bed mr-1"></i>${event.workforce.numberOfNights} night${event.workforce.numberOfNights > 1 ? 's' : ''}</p>` : ''}
+                                    ${hasExternalTravel ? `<p class="text-xs text-orange-600"><i class="fas fa-map-marker-alt mr-1"></i>External travel</p>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+                            <div class="flex items-center space-x-4">
+                                <button onclick="event.stopPropagation(); showEventDetails(${event.eventId})" 
+                                        class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                    <i class="fas fa-eye mr-1"></i>View Details
+                                </button>
+                                <button onclick="event.stopPropagation(); deleteEvent(${event.eventId})" 
+                                        class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                    <i class="fas fa-trash mr-1"></i>Delete
+                                </button>
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                ID: ${event.eventId} • ${new Date(event.createdAt).toLocaleDateString()}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Show event details in modal
+        function showEventDetails(eventId) {
+            const event = allEvents.find(e => e.eventId == eventId);
+            if (!event) return;
+            
+            currentModalEvent = event;
+            
+            // Update modal title
+            document.getElementById('modalEventName').textContent = event.name;
+            
+            // Prepare content
+            const workforce = event.workforce || {};
+            const travelAllowance = workforce.travelAllowance || {};
+            const localRuns = event.vehicles?.filter(v => v.isLocalRun) || [];
+            
+            const content = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Basic Information -->
+                    <div class="space-y-4">
+                        <h4 class="font-semibold text-gray-800 border-b pb-2">Basic Information</h4>
+                        <div class="space-y-2">
+                            <div><span class="font-medium">Event ID:</span> ${event.eventId}</div>
+                            <div><span class="font-medium">Distance:</span> ${formatCurrency(event.distance)} km</div>
+                            <div><span class="font-medium">Duration:</span> ${event.duration || 'Not available'}</div>
+                            <div><span class="font-medium">Distance from Bucharest:</span> ${formatCurrency(event.distanceFromBucharest || 0)} km</div>
+                            <div><span class="font-medium">Created:</span> ${new Date(event.createdAt).toLocaleString()}</div>
+                        </div>
+                        
+                        <!-- Vehicles -->
+                        <h4 class="font-semibold text-gray-800 border-b pb-2">Vehicles (${event.vehicles?.length || 0})</h4>
+                        <div class="space-y-2">
+                            ${event.vehicles?.map((vehicle, idx) => `
+                                <div class="p-2 bg-gray-50 rounded text-sm">
+                                    <div class="flex justify-between">
+                                        <span>${vehicle.type} ${vehicle.isLocalRun ? '<span class="text-green-600 font-medium">[LOCAL RUN]</span>' : ''}</span>
+                                        <span class="font-medium">${formatCurrency(vehicle.cost)} RON</span>
+                                    </div>
+                                    <div class="text-xs text-gray-600">${vehicle.pricePerKm} RON/km</div>
+                                </div>
+                            `).join('') || '<p class="text-gray-500">No vehicles</p>'}
+                        </div>
+                    </div>
+                    
+                    <!-- Workforce & Costs -->
+                    <div class="space-y-4">
+                        <h4 class="font-semibold text-gray-800 border-b pb-2">Workforce Details</h4>
+                        <div class="space-y-2">
+                            <div><span class="font-medium">Total Workers:</span> ${workforce.numberOfWorkers || 0}</div>
+                            <div><span class="font-medium">Helpers:</span> ${workforce.helpers || 0} (${formatCurrency(workforce.helpersCost || 0)} RON)</div>
+                            <div><span class="font-medium">Team Leaders:</span> ${workforce.teamLeaders || 0} (${formatCurrency(workforce.teamLeadersCost || 0)} RON)</div>
+                            <div><span class="font-medium">Working Hours:</span> ${workforce.workingHours || 0}h</div>
+                            <div><span class="font-medium">Workforce Cost:</span> ${formatCurrency(workforce.workforceCost || 0)} RON</div>
+                        </div>
+                        
+                        ${workforce.hasAccommodation ? `
+                        <h4 class="font-semibold text-gray-800 border-b pb-2">Accommodation</h4>
+                        <div class="space-y-2">
+                            <div><span class="font-medium">Nights:</span> ${workforce.numberOfNights || 0}</div>
+                            <div><span class="font-medium">Cost:</span> ${formatCurrency(workforce.accommodationCost || 0)} RON</div>
+                            <div class="text-xs text-gray-600">500 RON/night per team leader</div>
+                        </div>
+                        ` : ''}
+                        
+                        ${travelAllowance.isExternalTravel ? `
+                        <h4 class="font-semibold text-gray-800 border-b pb-2">Travel Allowance (Diurnă)</h4>
+                        <div class="space-y-2">
+                            <div><span class="font-medium">Travel Days:</span> ${workforce.travelDays || 0}</div>
+                            <div><span class="font-medium">Daily Rate:</span> ${travelAllowance.dailyRate || 0} RON/person/day</div>
+                            <div><span class="font-medium">Total Allowance:</span> ${formatCurrency(travelAllowance.totalAllowance || 0)} RON</div>
+                            <div class="text-xs text-gray-600">
+                                ${workforce.numberOfWorkers || 0} persons × ${workforce.travelDays || 0} days × ${travelAllowance.dailyRate || 0} RON
+                            </div>
+                        </div>
+                        ` : '<div class="text-gray-500">No external travel (< 80km from Bucharest)</div>'}
+                        
+                        <!-- Cost Summary -->
+                        <h4 class="font-semibold text-gray-800 border-b pb-2">Cost Summary</h4>
+                        <div class="space-y-2">
+                            <div><span class="font-medium">Vehicle Costs:</span> ${formatCurrency(event.vehicleCost || 0)} RON</div>
+                            <div><span class="font-medium">Workforce Costs:</span> ${formatCurrency(workforce.totalWorkforceCost || 0)} RON</div>
+                            <div><span class="font-medium">Subtotal (no VAT):</span> ${formatCurrency(event.costWithoutVAT || 0)} RON</div>
+                            <div><span class="font-medium">VAT (19%):</span> ${formatCurrency(event.vatAmount || 0)} RON</div>
+                            <div class="font-bold text-lg"><span class="font-bold">Total:</span> ${formatCurrency(event.costWithVAT || 0)} RON</div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${event.waypoints && event.waypoints.length > 0 ? `
+                <div class="mt-6">
+                    <h4 class="font-semibold text-gray-800 border-b pb-2">Route</h4>
+                    <div class="mt-2">
+                        ${event.waypoints.map((point, idx) => `
+                            <div class="flex items-center mb-1">
+                                <span class="inline-block w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center mr-2">
+                                    ${String.fromCharCode(65 + idx)}
+                                </span>
+                                <span class="text-sm">${point}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('eventDetailsContent').innerHTML = content;
+            document.getElementById('eventDetailsModal').classList.remove('hidden');
+            document.getElementById('eventDetailsModal').classList.add('flex');
+        }
+
+        // Close event details modal
+        function closeEventDetailsModal() {
+            document.getElementById('eventDetailsModal').classList.add('hidden');
+            document.getElementById('eventDetailsModal').classList.remove('flex');
+            currentModalEvent = null;
+        }
+
+        // Export single event to Excel
+        function exportEventToExcel() {
+            if (!currentModalEvent) return;
+            
+            const workbook = XLSX.utils.book_new();
+            const worksheetData = [];
+            
+            // Add event header
+            worksheetData.push(['Event Details Export']);
+            worksheetData.push(['Generated on:', new Date().toLocaleString()]);
+            worksheetData.push(['']); // Empty row
+            
+            const event = currentModalEvent;
+            const workforce = event.workforce || {};
+            const travelAllowance = workforce.travelAllowance || {};
+            
+            // Basic information
+            worksheetData.push(['Basic Information']);
+            worksheetData.push(['Event ID:', event.eventId]);
+            worksheetData.push(['Event Name:', event.name]);
+            worksheetData.push(['Distance:', `${event.distance?.toFixed(2) || 0} km`]);
+            worksheetData.push(['Duration:', event.duration || 'Not available']);
+            worksheetData.push(['Distance from Bucharest:', `${(event.distanceFromBucharest || 0).toFixed(2)} km`]);
+            worksheetData.push(['Created:', new Date(event.createdAt).toLocaleString()]);
+            worksheetData.push(['']); // Empty row
+            
+            // Vehicles
+            worksheetData.push(['Vehicles']);
+            worksheetData.push(['Type', 'Price/km (RON)', 'Cost (RON)', 'Local Run']);
+            event.vehicles?.forEach(vehicle => {
+                worksheetData.push([
+                    vehicle.type,
+                    vehicle.pricePerKm?.toFixed(2) || '0',
+                    vehicle.cost?.toFixed(2) || '0',
+                    vehicle.isLocalRun ? 'Yes' : 'No'
+                ]);
+            });
+            worksheetData.push(['']); // Empty row
+            
+            // Workforce
+            worksheetData.push(['Workforce Details']);
+            worksheetData.push(['Total Workers:', workforce.numberOfWorkers || 0]);
+            worksheetData.push(['Helpers:', `${workforce.helpers || 0} (${(workforce.helpersCost || 0).toFixed(2)} RON)`]);
+            worksheetData.push(['Team Leaders:', `${workforce.teamLeaders || 0} (${(workforce.teamLeadersCost || 0).toFixed(2)} RON)`]);
+            worksheetData.push(['Working Hours:', `${workforce.workingHours || 0}h`]);
+            worksheetData.push(['Workforce Subtotal:', `${(workforce.workforceCost || 0).toFixed(2)} RON`]);
+            
+            if (workforce.hasAccommodation) {
+                worksheetData.push(['']);
+                worksheetData.push(['Accommodation:']);
+                worksheetData.push(['Nights:', workforce.numberOfNights || 0]);
+                worksheetData.push(['Accommodation Cost:', `${(workforce.accommodationCost || 0).toFixed(2)} RON`]);
+            }
+            
+            if (travelAllowance.isExternalTravel) {
+                worksheetData.push(['']);
+                worksheetData.push(['Travel Allowance (Diurnă):']);
+                worksheetData.push(['Travel Days:', workforce.travelDays || 0]);
+                worksheetData.push(['Daily Rate:', `${travelAllowance.dailyRate || 0} RON/person/day`]);
+                worksheetData.push(['Total Allowance:', `${(travelAllowance.totalAllowance || 0).toFixed(2)} RON`]);
+            }
+            
+            worksheetData.push(['']); // Empty row
+            
+            // Cost summary
+            worksheetData.push(['Cost Summary']);
+            worksheetData.push(['Vehicle Costs:', `${(event.vehicleCost || 0).toFixed(2)} RON`]);
+            worksheetData.push(['Workforce Costs:', `${(workforce.totalWorkforceCost || 0).toFixed(2)} RON`]);
+            worksheetData.push(['Subtotal (no VAT):', `${(event.costWithoutVAT || 0).toFixed(2)} RON`]);
+            worksheetData.push(['VAT (19%):', `${(event.vatAmount || 0).toFixed(2)} RON`]);
+            worksheetData.push(['Total:', `${(event.costWithVAT || 0).toFixed(2)} RON`]);
+            
+            if (event.waypoints && event.waypoints.length > 0) {
+                worksheetData.push(['']); // Empty row
+                worksheetData.push(['Route']);
+                event.waypoints.forEach((point, idx) => {
+                    worksheetData.push([`${String.fromCharCode(65 + idx)}:`, point]);
+                });
+            }
+            
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            XLSX.utils.book_append_sheet(workbook, worksheet, `Event ${event.eventId}`);
+            
+            const filename = `event-${event.eventId}-${event.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.xlsx`;
+            XLSX.writeFile(workbook, filename);
+        }
+    </script>
+</body>
+</html> 

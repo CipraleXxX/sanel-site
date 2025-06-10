@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transport Route Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+        .drag-handle {
+            cursor: move;
+            padding: 8px;
+            color: #666;
+        }
+        .drag-handle:hover {
+            color: #333;
+        }
+        .location-input {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid #e5e7eb;
+        }
+        .location-letter {
+            font-weight: bold;
+            color: white;
+            margin-right: 0.5rem;
+            min-width: 1.5rem;
+            height: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        .add-location-button {
+            width: 100%;
+            border: 1px dashed #2563eb;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #2563eb;
+            background: white;
+            margin: 1rem 0;
+            cursor: pointer;
+        }
+        .add-location-button:hover {
+            background: #f8fafc;
+            border-color: #1d4ed8;
+        }
+        .remove-btn {
+            padding: 0.5rem;
+            color: #ef4444;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .remove-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+        .calculate-btn {
+            background: #2563eb;
+            transition: all 0.2s;
+        }
+        .calculate-btn:hover {
+            background: #1d4ed8;
+        }
+        .vehicles-container {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .vehicle-entry {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            background: #f9fafb;
+            border-radius: 0.375rem;
+        }
+        .form-section {
+            opacity: 0.5;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        .form-section.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .section-number {
+            background: #e5e7eb;
+            color: #374151;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.5rem;
+            font-weight: bold;
+        }
+        .active .section-number {
+            background: #2563eb;
+            color: white;
+        }
+        @media (max-width: 768px) {
+            .nav-text {
+                display: none;
+            }
+            .nav-icon {
+                margin-right: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen">
+        <nav class="bg-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+                <div class="relative flex items-center justify-between h-16">
+                    <!-- Mobile menu button-->
+                    <div class="absolute inset-y-0 left-0 flex items-center sm:hidden">
+                        <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                            <span class="sr-only">Open main menu</span>
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Desktop Navigation -->
+                    <div class="hidden sm:flex flex-1 items-center justify-center sm:items-stretch">
+                        <div class="flex space-x-4">
+                            <a href="index.html" class="nav-link group flex items-center px-3 py-2 text-base font-medium rounded-md bg-blue-50 text-blue-600">
+                                <i class="fas fa-route nav-icon mr-3 text-blue-600"></i>
+                                <span class="nav-text">Route Planning</span>
+                            </a>
+                            <a href="fleet.html" class="nav-link group flex items-center px-3 py-2 text-base font-medium rounded-md hover:bg-blue-50 transition-colors duration-150">
+                                <i class="fas fa-truck nav-icon mr-3 text-blue-600"></i>
+                                <span class="nav-text">Fleet Management</span>
+                            </a>
+                            <a href="events.html" class="nav-link group flex items-center px-3 py-2 text-base font-medium rounded-md hover:bg-blue-50 transition-colors duration-150">
+                                <i class="fas fa-calendar-alt nav-icon mr-3 text-blue-600"></i>
+                                <span class="nav-text">Events</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile menu, show/hide based on menu state -->
+            <div class="sm:hidden hidden" id="mobile-menu">
+                <div class="px-2 pt-2 pb-3 space-y-1">
+                    <a href="index.html" class="nav-link flex items-center px-3 py-2 rounded-md text-base font-medium bg-blue-50 text-blue-600">
+                        <i class="fas fa-route mr-3"></i>
+                        Route Planning
+                    </a>
+                    <a href="fleet.html" class="nav-link flex items-center px-3 py-2 rounded-md text-base font-medium hover:bg-blue-50 transition-colors duration-150">
+                        <i class="fas fa-truck mr-3 text-blue-600"></i>
+                        Fleet Management
+                    </a>
+                    <a href="events.html" class="nav-link flex items-center px-3 py-2 rounded-md text-base font-medium hover:bg-blue-50 transition-colors duration-150">
+                        <i class="fas fa-calendar-alt mr-3 text-blue-600"></i>
+                        Events
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mx-auto px-4 py-8">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-bold">Transport Route Planner</h1>
+                    <button id="refreshRoute" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-150 flex items-center justify-center">
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+                
+                <form id="routeForm" class="space-y-6">
+                    <!-- Event Details Section -->
+                    <div class="form-section active" id="eventSection">
+                        <div class="section-header">
+                            <div class="section-number">1</div>
+                            <h2 class="text-lg font-semibold">Event Details</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Event Name / Delivery Location
+                                </label>
+                                <input type="text" id="eventName" required
+                                       class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                       placeholder="Enter event name or delivery location">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Delivery Date
+                                </label>
+                                <input type="date" id="eventDate" required
+                                       class="w-full p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white cursor-pointer">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 flex justify-end">
+                            <button type="button" id="continueToVehicles" 
+                                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                                Continue to Vehicle Selection
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Vehicles Section -->
+                    <div class="form-section" id="vehiclesSection">
+                        <div class="section-header">
+                            <div class="section-number">2</div>
+                            <h2 class="text-lg font-semibold">Vehicle Selection</h2>
+                        </div>
+                        <div class="vehicles-container">
+                            <div id="vehiclesList">
+                                <!-- Vehicle entries will be added here -->
+                            </div>
+                            <button type="button" id="addVehicle" 
+                                    class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                                <i class="fas fa-plus mr-2"></i>Add Vehicle
+                            </button>
+                        </div>
+                        <div class="mt-4 flex justify-between">
+                            <button type="button" id="backToEvent" 
+                                    class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                                <i class="fas fa-arrow-left mr-2"></i>Back to Event Details
+                            </button>
+                            <button type="button" id="continueToWorkforce" 
+                                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                                Continue to Workforce Costs
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Workforce Section -->
+                    <div class="form-section" id="workforceSection">
+                        <div class="section-header">
+                            <div class="section-number">3</div>
+                            <h2 class="text-lg font-semibold">Workforce & Accommodation Costs</h2>
+                        </div>
+                        
+                        <!-- Workforce Costs -->
+                        <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                            <h3 class="font-semibold text-gray-800 mb-3">
+                                <i class="fas fa-users mr-2 text-blue-600"></i>
+                                Workforce
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Number of Workers
+                                    </label>
+                                    <input type="number" id="numberOfWorkers" min="0" value="0"
+                                           class="w-full p-3 border rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                                           placeholder="Enter number of workers">
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        <div>• 1 worker = 1 team leader</div>
+                                        <div>• 2-9 workers = 1 team leader + helpers</div>
+                                        <div>• 10+ workers = 2 team leaders + helpers</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Working Hours per Worker
+                                    </label>
+                                    <input type="number" id="workingHours" min="0" step="0.5" value="0"
+                                           class="w-full p-3 border rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                                           placeholder="Enter hours per worker">
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        <div>• Helper: 32 RON/hour</div>
+                                        <div>• Team leader: 38 RON/hour</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Accommodation -->
+                        <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                            <h3 class="font-semibold text-gray-800 mb-3">
+                                <i class="fas fa-bed mr-2 text-green-600"></i>
+                                Accommodation
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="checkbox" id="hasAccommodation" class="w-5 h-5 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500 mr-3">
+                                        <span class="text-sm font-medium text-gray-700">Include accommodation costs</span>
+                                    </label>
+                                    <div class="text-xs text-gray-500 mt-1">Only team leaders receive accommodation</div>
+                                </div>
+                                <div id="accommodationDetails" class="hidden">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Number of Nights
+                                    </label>
+                                    <input type="number" id="numberOfNights" min="0" value="1"
+                                           class="w-full p-3 border rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                                           placeholder="Enter number of nights">
+                                    <div class="text-xs text-gray-500 mt-1">500 RON/night per team leader</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Travel Allowance (Diurnă) -->
+                        <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                            <h3 class="font-semibold text-gray-800 mb-3">
+                                <i class="fas fa-map-marker-alt mr-2 text-purple-600"></i>
+                                Travel Allowance (Diurnă)
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Number of Travel Days
+                                    </label>
+                                    <input type="number" id="travelDays" min="0" value="1"
+                                           class="w-full p-3 border rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                                           placeholder="Enter number of travel days">
+                                    <div class="text-xs text-gray-500 mt-1">Days spent on external travel</div>
+                                </div>
+                                <div id="travelAllowanceInfo" class="p-3 bg-purple-50 rounded-lg">
+                                    <div class="text-sm font-medium text-purple-800 mb-1">Automatic Calculation</div>
+                                    <div class="text-xs text-purple-600 space-y-1">
+                                        <div>• Distance from Bucharest will be calculated automatically</div>
+                                        <div>• > 80 km: 50 RON/day per person</div>
+                                        <div>• > 500 km: 100 RON/day per person</div>
+                                        <div>• < 80 km: No travel allowance</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="workforceCostPreview" class="mt-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400 hidden">
+                            <h3 class="font-semibold text-blue-800 mb-2">
+                                <i class="fas fa-calculator mr-2"></i>
+                                Cost Breakdown
+                            </h3>
+                            <div id="workforceBreakdown" class="text-sm text-blue-700 space-y-1"></div>
+                        </div>
+
+                        <div class="mt-6 flex justify-between">
+                            <button type="button" id="backToVehiclesFromWorkforce" 
+                                    class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center">
+                                <i class="fas fa-arrow-left mr-2"></i>Back to Vehicle Selection
+                            </button>
+                            <button type="button" id="continueToLocations" 
+                                    class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                                Continue to Route Planning<i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Locations Section -->
+                    <div class="form-section" id="locationsSection">
+                        <div class="section-header">
+                            <div class="section-number">4</div>
+                            <h2 class="text-lg font-semibold">Route Planning</h2>
+                        </div>
+                        <div id="all-locations" class="space-y-2">
+                            <div class="location-input" data-type="start">
+                                <span class="location-letter">A</span>
+                                <div class="drag-handle">
+                                    <i class="fas fa-grip-vertical"></i>
+                                </div>
+                                <input type="text" id="startLocation" class="flex-grow p-2 border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="Enter location">
+                                <button type="button" class="remove-btn ml-2" onclick="removeLocation(this)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+
+                            <div id="stops"></div>
+
+                            <button type="button" id="addStop" class="add-location-button">
+                                <i class="fas fa-plus mr-2"></i>
+                                Add Location
+                            </button>
+                        </div>
+
+                        <div class="mt-4 flex justify-between">
+                            <button type="button" id="backToWorkforce" 
+                                    class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                                <i class="fas fa-arrow-left mr-2"></i>Back to Workforce Costs
+                            </button>
+                            <button type="submit" class="calculate-btn w-48 text-white px-6 py-3 rounded-lg font-medium">
+                                Calculate Route
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div id="map" class="mt-6 rounded-lg overflow-hidden shadow-lg"></div>
+
+                <div id="results" class="mt-6 p-6 bg-gray-50 rounded-lg hidden">
+                    <h2 class="text-xl font-bold mb-4">Route Details</h2>
+                    <!-- Event Details Summary -->
+                    <div class="mb-4 p-4 bg-white rounded-lg shadow">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <div class="text-gray-600 text-sm">Event/Delivery</div>
+                                <div class="font-medium" id="summaryEventName"></div>
+                            </div>
+                            <div>
+                                <div class="text-gray-600 text-sm">Date</div>
+                                <div class="font-medium" id="summaryEventDate"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Distance and Cost -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 bg-white rounded-lg shadow">
+                            <div class="text-gray-600 text-sm">Total Distance</div>
+                            <div class="text-2xl font-bold"><span id="totalDistance">0</span> km</div>
+                        </div>
+                        <div class="p-4 bg-white rounded-lg shadow">
+                            <div class="text-gray-600 text-sm">Total Cost (with VAT)</div>
+                            <div class="text-2xl font-bold"><span id="totalCost">0</span> RON</div>
+                        </div>
+                    </div>
+                    <div id="vehicleCosts" class="mt-4">
+                        <!-- Individual vehicle costs will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/navigation.js"></script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB9eG3KGQHsUJ8biAsGyqWeN_tfupC2BPE&libraries=places&callback=initMap">
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            mobileMenuButton.addEventListener('click', () => {
+                const isMenuHidden = mobileMenu.classList.contains('hidden');
+                if (isMenuHidden) {
+                    mobileMenu.classList.remove('hidden');
+                    mobileMenuButton.innerHTML = '<i class="fas fa-times"></i>';
+                } else {
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuButton.innerHTML = '<i class="fas fa-bars"></i>';
+                }
+            });
+
+            // Form sections navigation
+            const eventSection = document.getElementById('eventSection');
+            // ... rest of the existing code ...
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,161 @@
+/* Stil general pentru site */
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f4f6fa;
+  color: #222;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 12px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.07);
+}
+
+/* Lista de evenimente */
+#eventsList {
+  margin-top: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 6px 0 rgba(0,0,0,0.04);
+}
+.event-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.2s;
+}
+.event-row:last-child {
+  border-bottom: none;
+}
+.event-row:hover {
+  background: #f1f5f9;
+}
+
+/* Checkbox mare pentru touch */
+.touch-checkbox {
+  width: 32px;
+  height: 32px;
+  accent-color: #2563eb;
+  border-radius: 8px;
+  border: 2px solid #2563eb;
+  margin-right: 8px;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.touch-checkbox:active, .touch-checkbox:focus {
+  box-shadow: 0 0 0 3px #93c5fd;
+}
+
+/* Buton X mare pentru ștergere, prietenos touch */
+.touch-delete-btn {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  box-shadow: 0 2px 8px 0 rgba(239,68,68,0.08);
+}
+.touch-delete-btn:hover, .touch-delete-btn:focus {
+  background: #b91c1c;
+  transform: scale(1.08);
+}
+
+/* Workforce și Accommodation secțiuni */
+.workforce-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all 0.2s;
+}
+
+.workforce-section:hover {
+  box-shadow: 0 4px 12px 0 rgba(0,0,0,0.05);
+}
+
+/* Stil pentru preview-ul de costuri */
+#workforceCostPreview {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Checkbox pentru accommodation */
+#hasAccommodation {
+  width: 20px;
+  height: 20px;
+  accent-color: #10b981;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#hasAccommodation:checked {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+/* Input-uri îmbunătățite */
+input[type="number"], input[type="text"], input[type="date"] {
+  transition: all 0.2s;
+  border: 2px solid #e5e7eb;
+}
+
+input[type="number"]:focus, input[type="text"]:focus, input[type="date"]:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Butoane îmbunătățite */
+button {
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px 0 rgba(0,0,0,0.1);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Alte elemente utile */
+input, select, button {
+  font-size: 1.1rem;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  background: #e5e7eb;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+} 
